@@ -18,6 +18,7 @@ import {
 import * as SplashScreen from 'expo-splash-screen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
+import { Platform, Dimensions } from 'react-native';
 import SplashScreenComponent from '@/components/SplashScreen';
 
 SplashScreen.preventAutoHideAsync();
@@ -26,6 +27,7 @@ export default function RootLayout() {
   useFrameworkReady();
   const [isOnboardingComplete, setIsOnboardingComplete] = useState<boolean | null>(null);
   const [showSplash, setShowSplash] = useState(true);
+  const [isDesktop, setIsDesktop] = useState(false);
 
   const [fontsLoaded, fontError] = useFonts({
     'Inter-Regular': Inter_400Regular,
@@ -39,6 +41,10 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
+    // Check if we're on desktop/web
+    const { width } = Dimensions.get('window');
+    setIsDesktop(Platform.OS === 'web' && width >= 768);
+    
     checkOnboardingStatus();
   }, []);
 
@@ -46,12 +52,19 @@ export default function RootLayout() {
     if ((fontsLoaded || fontError) && isOnboardingComplete !== null && !showSplash) {
       SplashScreen.hideAsync();
       
-      // Navigate based on onboarding status
+      // Navigate based on onboarding status and platform
       if (!isOnboardingComplete) {
-        router.replace('/boarding');
+        router.replace('/onboarding');
+      } else {
+        // If onboarding is complete, go to appropriate screen
+        if (isDesktop) {
+          router.replace('/desktop-scan');
+        } else {
+          router.replace('/(tabs)/home');
+        }
       }
     }
-  }, [fontsLoaded, fontError, isOnboardingComplete, showSplash]);
+  }, [fontsLoaded, fontError, isOnboardingComplete, showSplash, isDesktop]);
 
   const checkOnboardingStatus = async () => {
     try {
@@ -78,9 +91,10 @@ export default function RootLayout() {
   return (
     <>
       <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+        <Stack.Screen name="desktop-scan" options={{ headerShown: false }} />
         <Stack.Screen name="boarding" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="onboarding" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="auto" />
