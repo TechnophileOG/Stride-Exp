@@ -253,10 +253,18 @@ export default function BoardingScreen() {
   const handleSave = async () => {
     setIsLoading(true);
     try {
+      // Save user profile
       await AsyncStorage.setItem('userProfile', JSON.stringify(profile));
+      // Mark onboarding as completed
       await AsyncStorage.setItem('onboardingCompleted', 'true');
+      
+      console.log('Profile saved successfully:', profile);
+      console.log('Onboarding marked as completed');
+      
+      // Navigate to main app
       router.replace('/(tabs)/home');
     } catch (error) {
+      console.error('Failed to save profile:', error);
       Alert.alert('Error', 'Failed to save profile. Please try again.');
     } finally {
       setIsLoading(false);

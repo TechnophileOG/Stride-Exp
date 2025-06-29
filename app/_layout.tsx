@@ -55,8 +55,15 @@ export default function RootLayout() {
       // Both onboarding flag AND user profile must exist for completion
       const isComplete = onboardingStatus === 'true' && userProfile !== null;
       setIsOnboardingComplete(isComplete);
+      
+      console.log('Onboarding check:', {
+        onboardingStatus,
+        hasUserProfile: userProfile !== null,
+        isComplete
+      });
     } catch (error) {
       console.error('Failed to check onboarding status:', error);
+      // Default to requiring onboarding on error
       setIsOnboardingComplete(false);
     }
   };
@@ -73,13 +80,13 @@ export default function RootLayout() {
     return <SplashScreenComponent onAnimationComplete={handleSplashComplete} />;
   }
 
-  // Conditional rendering based on onboarding status
+  // If onboarding is not complete, show onboarding flow only
   if (!isOnboardingComplete) {
     return (
       <>
         <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="boarding" options={{ headerShown: false }} />
           <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+          <Stack.Screen name="boarding" options={{ headerShown: false }} />
           <Stack.Screen name="+not-found" />
         </Stack>
         <StatusBar style="auto" />
@@ -87,11 +94,13 @@ export default function RootLayout() {
     );
   }
 
+  // User has completed onboarding, show main app
   return (
     <>
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+        <Stack.Screen name="boarding" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="auto" />

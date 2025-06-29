@@ -46,12 +46,14 @@ export default function OnboardingScreen() {
     if (currentStep < onboardingSteps.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
-      router.replace('/(tabs)');
+      // Navigate to detailed profile setup (boarding screen)
+      router.replace('/boarding');
     }
   };
 
   const handleSkip = () => {
-    router.replace('/(tabs)');
+    // Navigate to detailed profile setup (boarding screen)
+    router.replace('/boarding');
   };
 
   const step = onboardingSteps[currentStep];
