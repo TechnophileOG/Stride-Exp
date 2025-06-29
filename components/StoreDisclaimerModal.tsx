@@ -8,7 +8,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AlertTriangle, ExternalLink, ShoppingBag, X } from 'lucide-react-native';
+import { TriangleAlert as AlertTriangle, ExternalLink, ShoppingBag, X } from 'lucide-react-native';
 
 interface StoreDisclaimerModalProps {
   visible: boolean;
