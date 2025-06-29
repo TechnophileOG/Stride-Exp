@@ -46,9 +46,11 @@ export default function RootLayout() {
     if ((fontsLoaded || fontError) && isOnboardingComplete !== null && !showSplash) {
       SplashScreen.hideAsync();
       
-      // Navigate based on onboarding status
+      // Navigate based on onboarding status - MANDATORY onboarding
       if (!isOnboardingComplete) {
         router.replace('/boarding');
+      } else {
+        router.replace('/(tabs)/home');
       }
     }
   }, [fontsLoaded, fontError, isOnboardingComplete, showSplash]);
@@ -56,7 +58,11 @@ export default function RootLayout() {
   const checkOnboardingStatus = async () => {
     try {
       const onboardingStatus = await AsyncStorage.getItem('onboardingCompleted');
-      setIsOnboardingComplete(onboardingStatus === 'true');
+      const userProfile = await AsyncStorage.getItem('userProfile');
+      
+      // Both onboarding flag AND user profile must exist
+      const isComplete = onboardingStatus === 'true' && userProfile !== null;
+      setIsOnboardingComplete(isComplete);
     } catch (error) {
       console.error('Failed to check onboarding status:', error);
       setIsOnboardingComplete(false);
