@@ -45,13 +45,6 @@ export default function RootLayout() {
   useEffect(() => {
     if ((fontsLoaded || fontError) && isOnboardingComplete !== null && !showSplash) {
       SplashScreen.hideAsync();
-      
-      // Navigate based on onboarding status - MANDATORY onboarding
-      if (!isOnboardingComplete) {
-        router.replace('/boarding');
-      } else {
-        router.replace('/(tabs)/home');
-      }
     }
   }, [fontsLoaded, fontError, isOnboardingComplete, showSplash]);
 
@@ -60,7 +53,7 @@ export default function RootLayout() {
       const onboardingStatus = await AsyncStorage.getItem('onboardingCompleted');
       const userProfile = await AsyncStorage.getItem('userProfile');
       
-      // Both onboarding flag AND user profile must exist
+      // Both onboarding flag AND user profile must exist for completion
       const isComplete = onboardingStatus === 'true' && userProfile !== null;
       setIsOnboardingComplete(isComplete);
     } catch (error) {
@@ -83,7 +76,10 @@ export default function RootLayout() {
 
   return (
     <>
-      <Stack screenOptions={{ headerShown: false }}>
+      <Stack 
+        screenOptions={{ headerShown: false }}
+        initialRouteName={isOnboardingComplete ? "(tabs)" : "boarding"}
+      >
         <Stack.Screen name="boarding" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="onboarding" options={{ headerShown: false }} />
