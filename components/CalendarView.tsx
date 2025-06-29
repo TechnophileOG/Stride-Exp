@@ -9,19 +9,7 @@ import {
   Dimensions,
   Modal,
 } from 'react-native';
-import { 
-  Calendar, 
-  ChevronLeft, 
-  ChevronRight, 
-  BookOpen, 
-  FileText, 
-  Clock,
-  Filter,
-  X,
-  Zap,
-  Users,
-  Edit3
-} from 'lucide-react-native';
+import { Calendar, ChevronLeft, ChevronRight, BookOpen, FileText, Clock, Filter, X, Zap, Users, CreditCard as Edit3 } from 'lucide-react-native';
 
 const { width: screenWidth } = Dimensions.get('window');
 const CARD_WIDTH = 80;

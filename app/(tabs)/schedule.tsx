@@ -13,30 +13,7 @@ import {
   Share
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { 
-  Calendar, 
-  Clock, 
-  Video, 
-  User, 
-  Bell,
-  ExternalLink,
-  Play,
-  Users,
-  BookOpen,
-  Zap,
-  Filter,
-  Download,
-  Upload,
-  Plus,
-  Edit3,
-  Trash2,
-  MapPin,
-  X,
-  Save,
-  Grid3x3,
-  List,
-  ChevronDown
-} from 'lucide-react-native';
+import { Calendar, Clock, Video, User, Bell, ExternalLink, Play, Users, BookOpen, Zap, Filter, Download, Upload, Plus, CreditCard as Edit3, Trash2, MapPin, X, Save, Grid3x3, List, ChevronDown } from 'lucide-react-native';
 import CalendarView from '@/components/CalendarView';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
