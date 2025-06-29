@@ -10,21 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { 
-  QrCode, 
-  Smartphone, 
-  Download, 
-  ArrowRight,
-  CheckCircle,
-  Camera,
-  Brain,
-  Shield,
-  BookOpen,
-  Zap,
-  Target,
-  Users,
-  Star
-} from 'lucide-react-native';
+import { QrCode, Smartphone, Download, ArrowRight, CircleCheck as CheckCircle, Camera, Brain, Shield, BookOpen, Zap, Target, Users, Star } from 'lucide-react-native';
 
 const { width: screenWidth } = Dimensions.get('window');
 
