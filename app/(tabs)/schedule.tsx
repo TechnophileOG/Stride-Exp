@@ -9,11 +9,10 @@ import {
   Alert,
   Modal,
   TextInput,
-  Platform,
-  Share
+  Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Calendar, Clock, Video, User, Bell, ExternalLink, Play, Users, BookOpen, Zap, Filter, Download, Upload, Plus, CreditCard as Edit3, Trash2, MapPin, X, Save, Grid3x3, List, ChevronDown } from 'lucide-react-native';
+import { Calendar, Clock, Video, User, Bell, ExternalLink, Play, Users, BookOpen, Zap, Filter, Plus, CreditCard as Edit3, Trash2, MapPin, X, Save, Grid3x3, List, Search } from 'lucide-react-native';
 import CalendarView from '@/components/CalendarView';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -359,45 +358,6 @@ export default function ScheduleScreen() {
     );
   };
 
-  const handleExportData = async () => {
-    try {
-      const scheduleData: ScheduleData = {
-        classes,
-        lastUpdated: new Date().toISOString(),
-        version: '1.0.0'
-      };
-      
-      const dataString = JSON.stringify(scheduleData, null, 2);
-      
-      if (Platform.OS === 'web') {
-        // For web, create a download link
-        const blob = new Blob([dataString], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `schedule-${new Date().toISOString().split('T')[0]}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
-      } else {
-        // For mobile, use Share API
-        await Share.share({
-          message: dataString,
-          title: 'Class Schedule Data',
-        });
-      }
-    } catch (error) {
-      Alert.alert('Error', 'Failed to export schedule data');
-    }
-  };
-
-  const handleImportData = () => {
-    Alert.alert(
-      'Import Data',
-      'This feature would allow you to import schedule data from a JSON file. In a production app, this would open a file picker.',
-      [{ text: 'OK' }]
-    );
-  };
-
   const getTypeColor = (type: ClassEvent['type']) => {
     const colors = {
       lecture: '#2563EB',
@@ -502,7 +462,7 @@ export default function ScheduleScreen() {
   };
 
   const renderCalendarEvents = () => {
-    const eventsByDate: { [key: string]: ClassEvent[] } = {};
+    const eventsByDate: { [key: string]: any[] } = {};
     
     filteredClasses.forEach(event => {
       const dateKey = event.startTime.toISOString().split('T')[0];
@@ -513,7 +473,7 @@ export default function ScheduleScreen() {
         id: event.id,
         title: event.title,
         time: formatTime(event.startTime),
-        type: event.type as any,
+        type: event.type,
         subject: event.subject,
         duration: formatDuration(event.startTime, event.endTime),
         isLive: event.isLive,
@@ -575,21 +535,20 @@ export default function ScheduleScreen() {
             </Text>
           </TouchableOpacity>
         </View>
-
-        <TouchableOpacity style={styles.exportButton} onPress={handleExportData}>
-          <Download size={16} color="#2563EB" />
-        </TouchableOpacity>
       </View>
 
       {/* Search Bar */}
       <View style={styles.searchContainer}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search classes, instructors, subjects..."
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          placeholderTextColor="#9CA3AF"
-        />
+        <View style={styles.searchBar}>
+          <Search size={20} color="#9CA3AF" />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search classes, instructors, subjects..."
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholderTextColor="#9CA3AF"
+          />
+        </View>
       </View>
 
       {/* Content */}
@@ -664,19 +623,6 @@ export default function ScheduleScreen() {
                   </Text>
                 </TouchableOpacity>
               ))}
-            </View>
-
-            {/* Import/Export */}
-            <View style={styles.filterSection}>
-              <Text style={styles.filterSectionTitle}>Data Management</Text>
-              <TouchableOpacity style={styles.dataButton} onPress={handleExportData}>
-                <Download size={20} color="#2563EB" />
-                <Text style={styles.dataButtonText}>Export Schedule</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.dataButton} onPress={handleImportData}>
-                <Upload size={20} color="#059669" />
-                <Text style={styles.dataButtonText}>Import Schedule</Text>
-              </TouchableOpacity>
             </View>
           </ScrollView>
         </SafeAreaView>
@@ -832,7 +778,7 @@ const styles = StyleSheet.create({
   },
   viewModeContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 12,
@@ -865,25 +811,29 @@ const styles = StyleSheet.create({
   viewModeTextActive: {
     color: '#FFFFFF',
   },
-  exportButton: {
-    padding: 8,
-    borderRadius: 8,
-    backgroundColor: '#EFF6FF',
-  },
   searchContainer: {
     paddingHorizontal: 20,
     paddingVertical: 12,
     backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
   },
-  searchInput: {
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#F9FAFB',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    fontSize: 16,
-    fontFamily: 'Inter-Regular',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderWidth: 1,
     borderColor: '#E5E7EB',
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    fontFamily: 'Inter-Regular',
+    color: '#374151',
+    marginLeft: 12,
   },
   scrollView: {
     flex: 1,
@@ -1060,22 +1010,6 @@ const styles = StyleSheet.create({
   filterOptionTextActive: {
     color: '#2563EB',
     fontFamily: 'Inter-SemiBold',
-  },
-  dataButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  dataButtonText: {
-    fontSize: 14,
-    fontFamily: 'Inter-SemiBold',
-    color: '#374151',
-    marginLeft: 8,
   },
   formSection: {
     marginBottom: 16,

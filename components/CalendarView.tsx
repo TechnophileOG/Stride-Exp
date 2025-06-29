@@ -9,7 +9,19 @@ import {
   Dimensions,
   Modal,
 } from 'react-native';
-import { Calendar, ChevronLeft, ChevronRight, BookOpen, FileText, Clock, Filter, X, Zap, Users, CreditCard as Edit3 } from 'lucide-react-native';
+import { 
+  Calendar, 
+  ChevronLeft, 
+  ChevronRight, 
+  BookOpen, 
+  FileText, 
+  Clock,
+  Filter,
+  X,
+  Zap,
+  Users,
+  CreditCard as Edit3
+} from 'lucide-react-native';
 
 const { width: screenWidth } = Dimensions.get('window');
 const CARD_WIDTH = 80;
@@ -290,48 +302,78 @@ export default function CalendarView({ onDateSelect, events = SAMPLE_EVENTS }: C
           const isExpanded = expandedDate === dateKey;
           
           return (
-            <TouchableOpacity
-              key={dateKey}
-              style={[
-                styles.dateCard,
-                day.isToday && styles.todayCard,
-                isExpanded && styles.expandedCard,
-              ]}
-              onPress={() => handleDatePress(day)}
-              activeOpacity={0.7}
-            >
-              <Text style={[
-                styles.dayName,
-                day.isToday && styles.todayText,
-                isExpanded && styles.expandedText,
-              ]}>
-                {day.dayName}
-              </Text>
-              
-              <Text style={[
-                styles.dayNumber,
-                day.isToday && styles.todayText,
-                isExpanded && styles.expandedText,
-              ]}>
-                {day.dayNumber}
-              </Text>
-              
-              {day.events.length > 0 && (
-                <View style={[
-                  styles.eventIndicator,
-                  day.isToday && styles.todayIndicator,
-                  isExpanded && styles.expandedIndicator,
+            <View key={dateKey} style={styles.dayContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.dateCard,
+                  day.isToday && styles.todayCard,
+                  isExpanded && styles.expandedCard,
+                ]}
+                onPress={() => handleDatePress(day)}
+                activeOpacity={0.7}
+              >
+                <Text style={[
+                  styles.dayName,
+                  day.isToday && styles.todayText,
+                  isExpanded && styles.expandedText,
                 ]}>
-                  <Text style={[
-                    styles.eventCount,
-                    day.isToday && styles.todayEventCount,
-                    isExpanded && styles.expandedEventCount,
+                  {day.dayName}
+                </Text>
+                
+                <Text style={[
+                  styles.dayNumber,
+                  day.isToday && styles.todayText,
+                  isExpanded && styles.expandedText,
+                ]}>
+                  {day.dayNumber}
+                </Text>
+                
+                {day.events.length > 0 && (
+                  <View style={[
+                    styles.eventIndicator,
+                    day.isToday && styles.todayIndicator,
+                    isExpanded && styles.expandedIndicator,
                   ]}>
-                    {day.events.length}
-                  </Text>
+                    <Text style={[
+                      styles.eventCount,
+                      day.isToday && styles.todayEventCount,
+                      isExpanded && styles.expandedEventCount,
+                    ]}>
+                      {day.events.length}
+                    </Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+
+              {/* Event Blocks Below Calendar Card */}
+              {day.events.length > 0 && (
+                <View style={styles.eventBlocks}>
+                  {day.events.slice(0, 3).map((event, eventIndex) => (
+                    <View 
+                      key={event.id} 
+                      style={[
+                        styles.eventBlock,
+                        { backgroundColor: getEventColor(event.type) }
+                      ]}
+                    >
+                      <Text style={styles.eventBlockText} numberOfLines={1}>
+                        {event.title}
+                      </Text>
+                      <Text style={styles.eventBlockTime}>
+                        {event.time}
+                      </Text>
+                    </View>
+                  ))}
+                  {day.events.length > 3 && (
+                    <View style={styles.moreEventsBlock}>
+                      <Text style={styles.moreEventsText}>
+                        +{day.events.length - 3} more
+                      </Text>
+                    </View>
+                  )}
                 </View>
               )}
-            </TouchableOpacity>
+            </View>
           );
         })}
       </ScrollView>
@@ -521,12 +563,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 16,
   },
+  dayContainer: {
+    marginHorizontal: CARD_MARGIN,
+    alignItems: 'center',
+  },
   dateCard: {
     width: CARD_WIDTH,
     backgroundColor: '#F9FAFB',
     borderRadius: 16,
     padding: 12,
-    marginHorizontal: CARD_MARGIN,
     alignItems: 'center',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
@@ -535,6 +580,7 @@ const styles = StyleSheet.create({
     elevation: 3,
     borderWidth: 2,
     borderColor: 'transparent',
+    marginBottom: 8,
   },
   todayCard: {
     backgroundColor: '#2563EB',
@@ -585,6 +631,41 @@ const styles = StyleSheet.create({
     color: '#EF4444',
   },
   expandedEventCount: {
+    color: '#FFFFFF',
+  },
+  eventBlocks: {
+    width: CARD_WIDTH,
+    gap: 4,
+  },
+  eventBlock: {
+    borderRadius: 6,
+    padding: 6,
+    height: 32,
+    justifyContent: 'center',
+  },
+  eventBlockText: {
+    fontSize: 10,
+    fontFamily: 'Inter-SemiBold',
+    color: '#FFFFFF',
+    lineHeight: 12,
+  },
+  eventBlockTime: {
+    fontSize: 8,
+    fontFamily: 'Inter-Regular',
+    color: 'rgba(255, 255, 255, 0.8)',
+    lineHeight: 10,
+  },
+  moreEventsBlock: {
+    backgroundColor: '#9CA3AF',
+    borderRadius: 6,
+    padding: 6,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  moreEventsText: {
+    fontSize: 9,
+    fontFamily: 'Inter-Medium',
     color: '#FFFFFF',
   },
   eventDetails: {
