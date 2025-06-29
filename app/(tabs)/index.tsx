@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Send, Brain, User, Lightbulb, BookOpen, Calculator, Camera, X, FlashlightOff as FlashOff, Slash as FlashOn, RotateCcw, Zap, Target } from 'lucide-react-native';
+import { Send, Brain, User, Lightbulb, BookOpen, Calculator, Camera, X, FlashlightOff as FlashOff, Slash as FlashOn, RotateCcw, Zap } from 'lucide-react-native';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -171,6 +171,14 @@ export default function GuruScreen() {
 
   const toggleFlash = () => {
     setFlashEnabled(!flashEnabled);
+  };
+
+  const handleQuickAction = (action: string) => {
+    if (action === 'explain') {
+      sendMessage('Please explain this concept in detail');
+    } else if (action === 'solve') {
+      sendMessage('Please solve this step by step');
+    }
   };
 
   const renderMessage = (message: Message) => {
@@ -337,10 +345,16 @@ export default function GuruScreen() {
 
         <View style={styles.inputContainer}>
           <View style={styles.quickActions}>
-            <TouchableOpacity style={styles.quickAction}>
+            <TouchableOpacity 
+              style={styles.quickAction}
+              onPress={() => handleQuickAction('explain')}
+            >
               <Text style={styles.quickActionText}>Explain concept</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.quickAction}>
+            <TouchableOpacity 
+              style={styles.quickAction}
+              onPress={() => handleQuickAction('solve')}
+            >
               <Text style={styles.quickActionText}>Solve step-by-step</Text>
             </TouchableOpacity>
           </View>
