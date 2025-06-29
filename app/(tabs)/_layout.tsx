@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { Chrome as Home, Camera, MessageCircle, User } from 'lucide-react-native';
+import { Home, UserRound, User, Brain } from 'lucide-react-native';
 import { StyleSheet } from 'react-native';
 
 export default function TabLayout() {
@@ -24,18 +24,9 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Scan',
+          title: 'Guru',
           tabBarIcon: ({ size, color }) => (
-            <Camera size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="chat"
-        options={{
-          title: 'Chat',
-          tabBarIcon: ({ size, color }) => (
-            <MessageCircle size={size} color={color} />
+            <Brain size={size} color={color} />
           ),
         }}
       />

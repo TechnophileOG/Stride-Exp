@@ -19,8 +19,8 @@ export default function ProfileScreen() {
   const stats = [
     { label: 'Problems Solved', value: '127', icon: Trophy, color: '#EA580C' },
     { label: 'Study Sessions', value: '45', icon: Clock, color: '#2563EB' },
-    { label: 'Concepts Learned', value: '23', icon: Brain, color: '#059669' },
-    { label: 'Accuracy Rate', value: '89%', icon: Target, color: '#7C3AED' },
+    { label: 'Concepts Learned', value: '23', icon: Brain, color: '#7C3AED' },
+    { label: 'Accuracy Rate', value: '89%', icon: Target, color: '#059669' },
   ];
 
   const handleDeleteHistory = () => {
@@ -143,7 +143,7 @@ export default function ProfileScreen() {
           <View style={styles.settingItem}>
             <Text style={styles.settingLabel}>Auto-Save Solutions</Text>
             <Text style={styles.settingDescription}>
-              Automatically save AI solutions to your history
+              Automatically save AI solutions to your conversation history
             </Text>
             <Switch
               value={autoSave}
@@ -163,9 +163,9 @@ export default function ProfileScreen() {
 
           <TouchableOpacity style={styles.settingButton}>
             <View style={styles.settingContent}>
-              <Text style={styles.settingLabel}>How to Use AI Assistant</Text>
+              <Text style={styles.settingLabel}>How to Use AI Guru</Text>
               <Text style={styles.settingDescription}>
-                Learn how to get the best results from your AI tutor
+                Learn how to get the best guidance from your AI mentor
               </Text>
             </View>
             <ChevronRight size={16} color="#6B7280" />
@@ -173,7 +173,7 @@ export default function ProfileScreen() {
 
           <TouchableOpacity style={styles.settingButton}>
             <View style={styles.settingContent}>
-              <Text style={styles.settingLabel}>Scanning Tips</Text>
+              <Text style={styles.settingLabel}>Study Material Tips</Text>
               <Text style={styles.settingDescription}>
                 Best practices for capturing clear study materials
               </Text>
@@ -194,7 +194,7 @@ export default function ProfileScreen() {
 
         {/* App Info */}
         <View style={styles.appInfo}>
-          <Text style={styles.appInfoTitle}>AI Study Assistant</Text>
+          <Text style={styles.appInfoTitle}>AI Study Guru</Text>
           <Text style={styles.appInfoVersion}>Version 1.0.0</Text>
           <Text style={styles.appInfoDescription}>
             Powered by Google's Gemma 3B model for offline-first AI learning assistance
