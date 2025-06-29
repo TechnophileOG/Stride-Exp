@@ -17,7 +17,6 @@ import {
 } from '@expo-google-fonts/poppins';
 import * as SplashScreen from 'expo-splash-screen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { router } from 'expo-router';
 import SplashScreenComponent from '@/components/SplashScreen';
 
 SplashScreen.preventAutoHideAsync();
@@ -74,13 +73,23 @@ export default function RootLayout() {
     return <SplashScreenComponent onAnimationComplete={handleSplashComplete} />;
   }
 
+  // Conditional rendering based on onboarding status
+  if (!isOnboardingComplete) {
+    return (
+      <>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="boarding" options={{ headerShown: false }} />
+          <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+          <Stack.Screen name="+not-found" />
+        </Stack>
+        <StatusBar style="auto" />
+      </>
+    );
+  }
+
   return (
     <>
-      <Stack 
-        screenOptions={{ headerShown: false }}
-        initialRouteName={isOnboardingComplete ? "(tabs)" : "boarding"}
-      >
-        <Stack.Screen name="boarding" options={{ headerShown: false }} />
+      <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="onboarding" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
