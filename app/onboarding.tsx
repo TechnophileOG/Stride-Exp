@@ -4,7 +4,8 @@ import {
   Text, 
   StyleSheet, 
   TouchableOpacity,
-  Dimensions
+  Dimensions,
+  Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -47,13 +48,15 @@ export default function OnboardingScreen() {
       setCurrentStep(currentStep + 1);
     } else {
       // Navigate to detailed profile setup (boarding screen)
-      router.replace('/boarding');
+      console.log('Navigating to boarding screen from onboarding');
+      router.push('/boarding');
     }
   };
 
   const handleSkip = () => {
     // Navigate to detailed profile setup (boarding screen)
-    router.replace('/boarding');
+    console.log('Skipping to boarding screen from onboarding');
+    router.push('/boarding');
   };
 
   const step = onboardingSteps[currentStep];

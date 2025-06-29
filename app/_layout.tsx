@@ -18,6 +18,7 @@ import {
 import * as SplashScreen from 'expo-splash-screen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import SplashScreenComponent from '@/components/SplashScreen';
+import { Platform } from 'react-native';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -38,14 +39,30 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    checkOnboardingStatus();
+    initializeApp();
   }, []);
 
   useEffect(() => {
     if ((fontsLoaded || fontError) && isOnboardingComplete !== null && !showSplash) {
-      SplashScreen.hideAsync();
+      if (Platform.OS !== 'web') {
+        SplashScreen.hideAsync();
+      }
     }
   }, [fontsLoaded, fontError, isOnboardingComplete, showSplash]);
+
+  const initializeApp = async () => {
+    try {
+      // Add delay for web platform to ensure AsyncStorage is ready
+      if (Platform.OS === 'web') {
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+
+      await checkOnboardingStatus();
+    } catch (error) {
+      console.error('Failed to initialize app:', error);
+      setIsOnboardingComplete(false);
+    }
+  };
 
   const checkOnboardingStatus = async () => {
     try {
@@ -54,13 +71,16 @@ export default function RootLayout() {
       
       // Both onboarding flag AND user profile must exist for completion
       const isComplete = onboardingStatus === 'true' && userProfile !== null;
-      setIsOnboardingComplete(isComplete);
       
       console.log('Onboarding check:', {
+        platform: Platform.OS,
         onboardingStatus,
         hasUserProfile: userProfile !== null,
+        userProfile: userProfile ? JSON.parse(userProfile) : null,
         isComplete
       });
+      
+      setIsOnboardingComplete(isComplete);
     } catch (error) {
       console.error('Failed to check onboarding status:', error);
       // Default to requiring onboarding on error
@@ -72,6 +92,7 @@ export default function RootLayout() {
     setShowSplash(false);
   };
 
+  // Show loading state while checking onboarding status
   if (!fontsLoaded && !fontError) {
     return null;
   }
@@ -80,27 +101,16 @@ export default function RootLayout() {
     return <SplashScreenComponent onAnimationComplete={handleSplashComplete} />;
   }
 
-  // If onboarding is not complete, show onboarding flow only
-  if (!isOnboardingComplete) {
-    return (
-      <>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="onboarding" options={{ headerShown: false }} />
-          <Stack.Screen name="boarding" options={{ headerShown: false }} />
-          <Stack.Screen name="+not-found" />
-        </Stack>
-        <StatusBar style="auto" />
-      </>
-    );
-  }
-
-  // User has completed onboarding, show main app
+  // Always render all screens but control initial route
   return (
     <>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack 
+        screenOptions={{ headerShown: false }}
+        initialRouteName={isOnboardingComplete ? "(tabs)" : "onboarding"}
+      >
         <Stack.Screen name="onboarding" options={{ headerShown: false }} />
         <Stack.Screen name="boarding" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="auto" />
