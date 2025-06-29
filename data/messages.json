@@ -1,0 +1,42 @@
+{
+  "greetings": {
+    "morning": [
+      "Rise and shine! Today is full of learning opportunities! ☀️",
+      "Good morning! Ready to unlock new knowledge today? 🌅",
+      "Morning, scholar! Let's make today academically amazing! 📚",
+      "A new day, a new chance to learn something incredible! 🌟",
+      "Good morning! Your brain is ready for today's challenges! 🧠"
+    ],
+    "afternoon": [
+      "Good afternoon! Keep that learning momentum going! 🚀",
+      "Afternoon energy boost! Time for some productive studying! ⚡",
+      "Hope your day is filled with 'aha!' moments! 💡",
+      "Good afternoon! Ready to tackle those challenging concepts? 🎯",
+      "Afternoon scholar! Let's turn curiosity into knowledge! 🔍"
+    ],
+    "evening": [
+      "Good evening! Perfect time for some focused study! 🌙",
+      "Evening wisdom awaits! Let's dive into learning! 📖",
+      "Good evening! Ready to end the day with new insights? ✨",
+      "Evening study session? Your future self will thank you! 🌟",
+      "Good evening! Time to transform today's questions into tomorrow's answers! 🤔"
+    ]
+  },
+  "motivational": [
+    "Every expert was once a beginner. Keep going! 💪",
+    "Learning is a treasure that will follow you everywhere! 💎",
+    "The more you learn, the more you realize how much there is to discover! 🌍",
+    "Success is the sum of small efforts repeated day in and day out! 📈",
+    "Your only limit is your mind. Think big, learn bigger! 🧠",
+    "Knowledge is power, and you're building an empire! 👑",
+    "Every question you ask makes you smarter! 🤔",
+    "Learning never exhausts the mind - Leonardo da Vinci 🎨",
+    "The beautiful thing about learning is that no one can take it away from you! 🎓",
+    "Today's struggles are tomorrow's strengths! 💪",
+    "Education is the most powerful weapon to change the world! 🌍",
+    "The future belongs to those who learn more skills! 🚀",
+    "Small progress is still progress. Keep moving forward! 📈",
+    "Your potential is endless. Go do what you were created to do! ✨",
+    "Dream big, study hard, achieve greatness! 🎯"
+  ]
+}

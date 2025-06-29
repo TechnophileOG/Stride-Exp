@@ -1,0 +1,100 @@
+{
+  "boards": [
+    {
+      "name": "CBSE (Central Board of Secondary Education)",
+      "code": "CBSE",
+      "countries": ["IN"],
+      "description": "Central Board of Secondary Education - India's national education board"
+    },
+    {
+      "name": "ICSE (Indian Certificate of Secondary Education)",
+      "code": "ICSE",
+      "countries": ["IN"],
+      "description": "Indian Certificate of Secondary Education - Private education board"
+    },
+    {
+      "name": "State Board",
+      "code": "STATE",
+      "countries": ["IN"],
+      "description": "State-specific education boards across India"
+    },
+    {
+      "name": "NIOS (National Institute of Open Schooling)",
+      "code": "NIOS",
+      "countries": ["IN"],
+      "description": "National Institute of Open Schooling - Distance learning"
+    },
+    {
+      "name": "IB (International Baccalaureate)",
+      "code": "IB",
+      "countries": ["US", "IN", "GB", "CA", "AU", "DE", "FR", "JP", "BR", "OTHER"],
+      "description": "International Baccalaureate - Global education program"
+    },
+    {
+      "name": "Cambridge International",
+      "code": "CAMBRIDGE",
+      "countries": ["GB", "IN", "AU", "CA", "OTHER"],
+      "description": "Cambridge International Education - British curriculum"
+    },
+    {
+      "name": "Common Core State Standards",
+      "code": "CCSS",
+      "countries": ["US"],
+      "description": "Common Core State Standards - US national standards"
+    },
+    {
+      "name": "High School Diploma",
+      "code": "HSD",
+      "countries": ["US", "CA"],
+      "description": "Standard high school graduation credential"
+    },
+    {
+      "name": "A-Levels",
+      "code": "ALEVELS",
+      "countries": ["GB"],
+      "description": "Advanced Level qualifications - UK education system"
+    },
+    {
+      "name": "GCSE",
+      "code": "GCSE",
+      "countries": ["GB"],
+      "description": "General Certificate of Secondary Education - UK qualification"
+    },
+    {
+      "name": "Abitur",
+      "code": "ABITUR",
+      "countries": ["DE"],
+      "description": "German university entrance qualification"
+    },
+    {
+      "name": "Baccalauréat",
+      "code": "BAC",
+      "countries": ["FR"],
+      "description": "French national academic qualification"
+    },
+    {
+      "name": "ATAR",
+      "code": "ATAR",
+      "countries": ["AU"],
+      "description": "Australian Tertiary Admission Rank"
+    },
+    {
+      "name": "Japanese High School Diploma",
+      "code": "JHSD",
+      "countries": ["JP"],
+      "description": "Japanese secondary education completion"
+    },
+    {
+      "name": "Brazilian High School (Ensino Médio)",
+      "code": "ENSINO_MEDIO",
+      "countries": ["BR"],
+      "description": "Brazilian secondary education system"
+    },
+    {
+      "name": "Other",
+      "code": "OTHER",
+      "countries": ["US", "IN", "GB", "CA", "AU", "DE", "FR", "JP", "BR", "OTHER"],
+      "description": "Other education systems not listed above"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "firstNames": [
+    "Aadhya", "Aarav", "Abhinav", "Aditi", "Aditya", "Akash", "Akshara", "Ananya", "Anish", "Anjali",
+    "Ankit", "Anushka", "Arjun", "Arya", "Ashwin", "Avani", "Ayush", "Diya", "Divya", "Gaurav",
+    "Harsh", "Ishaan", "Ishita", "Jiya", "Karan", "Kavya", "Krishna", "Kriti", "Manav", "Meera",
+    "Naina", "Nikhil", "Nisha", "Pooja", "Priya", "Rahul", "Raj", "Riya", "Rohan", "Sai",
+    "Sakshi", "Shreya", "Siddharth", "Tanvi", "Varun", "Vihaan", "Yash", "Zara",
+    "Alexander", "Alexandra", "Andrew", "Anna", "Anthony", "Ashley", "Benjamin", "Brittany",
+    "Christopher", "Christina", "Daniel", "Danielle", "David", "Elizabeth", "Emily", "Emma",
+    "Ethan", "Grace", "Hannah", "Isabella", "Jacob", "James", "Jennifer", "Jessica",
+    "John", "Joshua", "Julia", "Katherine", "Kevin", "Lauren", "Madison", "Matthew",
+    "Michael", "Michelle", "Nicholas", "Nicole", "Noah", "Olivia", "Rachel", "Rebecca",
+    "Ryan", "Samantha", "Sarah", "Sophia", "Taylor", "Tyler", "Victoria", "William"
+  ],
+  "lastNames": [
+    "Agarwal", "Aggarwal", "Bansal", "Bhatia", "Chopra", "Garg", "Goyal", "Gupta", "Jain", "Kapoor",
+    "Kumar", "Malhotra", "Mehta", "Mittal", "Patel", "Rao", "Reddy", "Saha", "Sharma", "Singh",
+    "Sinha", "Tiwari", "Verma", "Yadav",
+    "Anderson", "Brown", "Davis", "Garcia", "Johnson", "Jones", "Martinez", "Miller", "Moore",
+    "Rodriguez", "Smith", "Taylor", "Thomas", "Williams", "Wilson"
+  ]
+}
