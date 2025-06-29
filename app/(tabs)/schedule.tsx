@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
   TouchableOpacity,
   RefreshControl,
-  Alert
+  Alert,
+  Modal,
+  TextInput,
+  Platform,
+  Share
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
 import { 
   Calendar, 
   Clock, 
@@ -20,113 +23,87 @@ import {
   Play,
   Users,
   BookOpen,
-  Zap
+  Zap,
+  Filter,
+  Download,
+  Upload,
+  Plus,
+  Edit3,
+  Trash2,
+  MapPin,
+  X,
+  Save,
+  Grid3x3,
+  List,
+  ChevronDown
 } from 'lucide-react-native';
+import CalendarView from '@/components/CalendarView';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-interface GoogleMeetClass {
+interface ClassEvent {
   id: string;
   title: string;
   description: string;
   startTime: Date;
   endTime: Date;
-  meetLink: string;
-  teacher: {
+  location?: string;
+  meetLink?: string;
+  instructor: {
     name: string;
     email: string;
     avatar?: string;
   };
   subject: string;
+  type: 'lecture' | 'lab' | 'seminar' | 'exam' | 'assignment';
   isLive: boolean;
   isUpcoming: boolean;
   attendeeCount?: number;
   recordingAvailable?: boolean;
-  youtubeRecordingUrl?: string;
+  recordingUrl?: string;
+  materials?: string[];
+  color: string;
 }
 
-// Sample data - In production, this would come from Google Calendar API
-const SAMPLE_CLASSES: GoogleMeetClass[] = [
-  {
-    id: '1',
-    title: 'Advanced Calculus: Derivatives and Applications',
-    description: 'Deep dive into derivative applications in real-world scenarios',
-    startTime: new Date(Date.now() + 30 * 60 * 1000), // 30 minutes from now
-    endTime: new Date(Date.now() + 90 * 60 * 1000), // 90 minutes from now
-    meetLink: 'https://meet.google.com/abc-defg-hij',
-    teacher: {
-      name: 'Dr. Sarah Johnson',
-      email: 'sarah.johnson@school.edu',
-      avatar: 'https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=100'
-    },
-    subject: 'Mathematics',
-    isLive: false,
-    isUpcoming: true,
-    attendeeCount: 24,
-    recordingAvailable: false
-  },
-  {
-    id: '2',
-    title: 'Organic Chemistry: Reaction Mechanisms',
-    description: 'Understanding complex organic reaction pathways',
-    startTime: new Date(Date.now() - 30 * 60 * 1000), // Started 30 minutes ago
-    endTime: new Date(Date.now() + 30 * 60 * 1000), // Ends in 30 minutes
-    meetLink: 'https://meet.google.com/xyz-uvwx-yz',
-    teacher: {
-      name: 'Prof. Michael Chen',
-      email: 'michael.chen@school.edu',
-      avatar: 'https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=100'
-    },
-    subject: 'Chemistry',
-    isLive: true,
-    isUpcoming: false,
-    attendeeCount: 18,
-    recordingAvailable: false
-  },
-  {
-    id: '3',
-    title: 'Physics: Electromagnetic Waves',
-    description: 'Exploring wave properties and electromagnetic spectrum',
-    startTime: new Date(Date.now() + 2 * 60 * 60 * 1000), // 2 hours from now
-    endTime: new Date(Date.now() + 3 * 60 * 60 * 1000), // 3 hours from now
-    meetLink: 'https://meet.google.com/pqr-stuv-wxy',
-    teacher: {
-      name: 'Dr. Emily Rodriguez',
-      email: 'emily.rodriguez@school.edu',
-      avatar: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=100'
-    },
-    subject: 'Physics',
-    isLive: false,
-    isUpcoming: true,
-    attendeeCount: 0,
-    recordingAvailable: false
-  },
-  {
-    id: '4',
-    title: 'Biology: Cell Division and Mitosis',
-    description: 'Detailed study of cellular reproduction processes',
-    startTime: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-    endTime: new Date(Date.now() - 1 * 60 * 60 * 1000), // 1 hour ago
-    meetLink: 'https://meet.google.com/def-ghij-klm',
-    teacher: {
-      name: 'Dr. Amanda Foster',
-      email: 'amanda.foster@school.edu',
-      avatar: 'https://images.pexels.com/photos/1181686/pexels-photo-1181686.jpeg?auto=compress&cs=tinysrgb&w=100'
-    },
-    subject: 'Biology',
-    isLive: false,
-    isUpcoming: false,
-    attendeeCount: 22,
-    recordingAvailable: true,
-    youtubeRecordingUrl: 'https://youtube.com/watch?v=example1'
-  }
-];
+interface ScheduleData {
+  classes: ClassEvent[];
+  lastUpdated: string;
+  version: string;
+}
+
+type ViewMode = 'list' | 'calendar';
+type FilterType = 'all' | 'lecture' | 'lab' | 'seminar' | 'exam' | 'assignment';
 
 export default function ScheduleScreen() {
-  const [classes, setClasses] = useState<GoogleMeetClass[]>(SAMPLE_CLASSES);
+  const [classes, setClasses] = useState<ClassEvent[]>([]);
+  const [filteredClasses, setFilteredClasses] = useState<ClassEvent[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [activeFilter, setActiveFilter] = useState<FilterType>('all');
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [addEventModalVisible, setAddEventModalVisible] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<ClassEvent | null>(null);
+  const [selectedInstructor, setSelectedInstructor] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Form state for adding/editing events
+  const [eventForm, setEventForm] = useState({
+    title: '',
+    description: '',
+    startTime: new Date(),
+    endTime: new Date(),
+    location: '',
+    meetLink: '',
+    instructorName: '',
+    instructorEmail: '',
+    subject: '',
+    type: 'lecture' as ClassEvent['type'],
+    materials: [] as string[],
+  });
 
   useEffect(() => {
-    // Update current time every minute
+    loadScheduleData();
     const timer = setInterval(() => {
       setCurrentTime(new Date());
       updateClassStatuses();
@@ -134,6 +111,139 @@ export default function ScheduleScreen() {
 
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    applyFilters();
+  }, [classes, activeFilter, selectedInstructor, searchQuery]);
+
+  const loadScheduleData = async () => {
+    try {
+      setLoading(true);
+      
+      // Try to load from AsyncStorage first
+      const cachedData = await AsyncStorage.getItem('scheduleData');
+      if (cachedData) {
+        const parsedData: ScheduleData = JSON.parse(cachedData);
+        const classesWithDates = parsedData.classes.map(cls => ({
+          ...cls,
+          startTime: new Date(cls.startTime),
+          endTime: new Date(cls.endTime),
+        }));
+        setClasses(classesWithDates);
+      } else {
+        // Load sample data if no cached data
+        await loadSampleData();
+      }
+    } catch (error) {
+      console.error('Failed to load schedule data:', error);
+      await loadSampleData();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadSampleData = async () => {
+    const sampleClasses: ClassEvent[] = [
+      {
+        id: '1',
+        title: 'Advanced Calculus: Derivatives and Applications',
+        description: 'Deep dive into derivative applications in real-world scenarios',
+        startTime: new Date(Date.now() + 30 * 60 * 1000),
+        endTime: new Date(Date.now() + 90 * 60 * 1000),
+        location: 'Room 301, Math Building',
+        meetLink: 'https://meet.google.com/abc-defg-hij',
+        instructor: {
+          name: 'Dr. Sarah Johnson',
+          email: 'sarah.johnson@school.edu',
+        },
+        subject: 'Mathematics',
+        type: 'lecture',
+        isLive: false,
+        isUpcoming: true,
+        attendeeCount: 24,
+        recordingAvailable: false,
+        materials: ['Calculus Textbook Ch. 3', 'Problem Set 5'],
+        color: '#2563EB'
+      },
+      {
+        id: '2',
+        title: 'Organic Chemistry Lab',
+        description: 'Synthesis of aspirin and analysis of reaction mechanisms',
+        startTime: new Date(Date.now() - 30 * 60 * 1000),
+        endTime: new Date(Date.now() + 30 * 60 * 1000),
+        location: 'Chemistry Lab 2',
+        instructor: {
+          name: 'Prof. Michael Chen',
+          email: 'michael.chen@school.edu',
+        },
+        subject: 'Chemistry',
+        type: 'lab',
+        isLive: true,
+        isUpcoming: false,
+        attendeeCount: 18,
+        recordingAvailable: false,
+        materials: ['Lab Manual Ch. 8', 'Safety Guidelines'],
+        color: '#059669'
+      },
+      {
+        id: '3',
+        title: 'Physics Seminar: Quantum Mechanics',
+        description: 'Guest lecture on quantum entanglement and applications',
+        startTime: new Date(Date.now() + 2 * 60 * 60 * 1000),
+        endTime: new Date(Date.now() + 3 * 60 * 60 * 1000),
+        location: 'Auditorium A',
+        meetLink: 'https://meet.google.com/pqr-stuv-wxy',
+        instructor: {
+          name: 'Dr. Emily Rodriguez',
+          email: 'emily.rodriguez@school.edu',
+        },
+        subject: 'Physics',
+        type: 'seminar',
+        isLive: false,
+        isUpcoming: true,
+        attendeeCount: 0,
+        recordingAvailable: false,
+        materials: ['Quantum Physics Notes', 'Research Papers'],
+        color: '#EA580C'
+      },
+      {
+        id: '4',
+        title: 'Biology Midterm Exam',
+        description: 'Comprehensive exam covering cellular biology and genetics',
+        startTime: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        endTime: new Date(Date.now() + 26 * 60 * 60 * 1000),
+        location: 'Exam Hall B',
+        instructor: {
+          name: 'Dr. Amanda Foster',
+          email: 'amanda.foster@school.edu',
+        },
+        subject: 'Biology',
+        type: 'exam',
+        isLive: false,
+        isUpcoming: true,
+        attendeeCount: 45,
+        recordingAvailable: false,
+        materials: ['Study Guide', 'Practice Exam'],
+        color: '#7C3AED'
+      }
+    ];
+
+    setClasses(sampleClasses);
+    await saveScheduleData(sampleClasses);
+  };
+
+  const saveScheduleData = async (classData: ClassEvent[]) => {
+    try {
+      const scheduleData: ScheduleData = {
+        classes: classData,
+        lastUpdated: new Date().toISOString(),
+        version: '1.0.0'
+      };
+      await AsyncStorage.setItem('scheduleData', JSON.stringify(scheduleData));
+    } catch (error) {
+      console.error('Failed to save schedule data:', error);
+    }
+  };
 
   const updateClassStatuses = () => {
     const now = new Date();
@@ -146,55 +256,191 @@ export default function ScheduleScreen() {
     );
   };
 
+  const applyFilters = () => {
+    let filtered = classes;
+
+    // Filter by type
+    if (activeFilter !== 'all') {
+      filtered = filtered.filter(cls => cls.type === activeFilter);
+    }
+
+    // Filter by instructor
+    if (selectedInstructor !== 'all') {
+      filtered = filtered.filter(cls => cls.instructor.name === selectedInstructor);
+    }
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(cls => 
+        cls.title.toLowerCase().includes(query) ||
+        cls.description.toLowerCase().includes(query) ||
+        cls.subject.toLowerCase().includes(query) ||
+        cls.instructor.name.toLowerCase().includes(query)
+      );
+    }
+
+    setFilteredClasses(filtered);
+  };
+
   const onRefresh = async () => {
     setRefreshing(true);
-    // Simulate API call to refresh Google Calendar data
-    setTimeout(() => {
-      updateClassStatuses();
-      setRefreshing(false);
-    }, 1000);
+    await loadScheduleData();
+    setRefreshing(false);
   };
 
-  const handleJoinMeeting = (meetClass: GoogleMeetClass) => {
-    if (meetClass.isLive || meetClass.isUpcoming) {
-      // In a real app, this would open the Google Meet link
-      Alert.alert(
-        'Join Meeting',
-        `Opening Google Meet for "${meetClass.title}"`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { 
-            text: 'Join', 
-            onPress: () => {
-              // Open Google Meet link
-              console.log('Opening:', meetClass.meetLink);
-            }
+  const handleAddEvent = () => {
+    setEditingEvent(null);
+    setEventForm({
+      title: '',
+      description: '',
+      startTime: new Date(),
+      endTime: new Date(Date.now() + 60 * 60 * 1000),
+      location: '',
+      meetLink: '',
+      instructorName: '',
+      instructorEmail: '',
+      subject: '',
+      type: 'lecture',
+      materials: [],
+    });
+    setAddEventModalVisible(true);
+  };
+
+  const handleEditEvent = (event: ClassEvent) => {
+    setEditingEvent(event);
+    setEventForm({
+      title: event.title,
+      description: event.description,
+      startTime: event.startTime,
+      endTime: event.endTime,
+      location: event.location || '',
+      meetLink: event.meetLink || '',
+      instructorName: event.instructor.name,
+      instructorEmail: event.instructor.email,
+      subject: event.subject,
+      type: event.type,
+      materials: event.materials || [],
+    });
+    setAddEventModalVisible(true);
+  };
+
+  const handleSaveEvent = async () => {
+    if (!eventForm.title.trim() || !eventForm.instructorName.trim()) {
+      Alert.alert('Error', 'Please fill in all required fields');
+      return;
+    }
+
+    const newEvent: ClassEvent = {
+      id: editingEvent?.id || Date.now().toString(),
+      title: eventForm.title,
+      description: eventForm.description,
+      startTime: eventForm.startTime,
+      endTime: eventForm.endTime,
+      location: eventForm.location,
+      meetLink: eventForm.meetLink,
+      instructor: {
+        name: eventForm.instructorName,
+        email: eventForm.instructorEmail,
+      },
+      subject: eventForm.subject,
+      type: eventForm.type,
+      isLive: false,
+      isUpcoming: eventForm.startTime > new Date(),
+      materials: eventForm.materials,
+      color: getTypeColor(eventForm.type),
+    };
+
+    let updatedClasses;
+    if (editingEvent) {
+      updatedClasses = classes.map(cls => cls.id === editingEvent.id ? newEvent : cls);
+    } else {
+      updatedClasses = [...classes, newEvent];
+    }
+
+    setClasses(updatedClasses);
+    await saveScheduleData(updatedClasses);
+    setAddEventModalVisible(false);
+  };
+
+  const handleDeleteEvent = async (eventId: string) => {
+    Alert.alert(
+      'Delete Event',
+      'Are you sure you want to delete this event?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            const updatedClasses = classes.filter(cls => cls.id !== eventId);
+            setClasses(updatedClasses);
+            await saveScheduleData(updatedClasses);
           }
-        ]
-      );
+        }
+      ]
+    );
+  };
+
+  const handleExportData = async () => {
+    try {
+      const scheduleData: ScheduleData = {
+        classes,
+        lastUpdated: new Date().toISOString(),
+        version: '1.0.0'
+      };
+      
+      const dataString = JSON.stringify(scheduleData, null, 2);
+      
+      if (Platform.OS === 'web') {
+        // For web, create a download link
+        const blob = new Blob([dataString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `schedule-${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+      } else {
+        // For mobile, use Share API
+        await Share.share({
+          message: dataString,
+          title: 'Class Schedule Data',
+        });
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to export schedule data');
     }
   };
 
-  const handleViewRecording = (meetClass: GoogleMeetClass) => {
-    if (meetClass.youtubeRecordingUrl) {
-      Alert.alert(
-        'View Recording',
-        `Opening YouTube recording for "${meetClass.title}"`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { 
-            text: 'Watch', 
-            onPress: () => {
-              console.log('Opening:', meetClass.youtubeRecordingUrl);
-            }
-          }
-        ]
-      );
-    }
+  const handleImportData = () => {
+    Alert.alert(
+      'Import Data',
+      'This feature would allow you to import schedule data from a JSON file. In a production app, this would open a file picker.',
+      [{ text: 'OK' }]
+    );
   };
 
-  const navigateToAnnouncements = () => {
-    router.push('/announcements');
+  const getTypeColor = (type: ClassEvent['type']) => {
+    const colors = {
+      lecture: '#2563EB',
+      lab: '#059669',
+      seminar: '#EA580C',
+      exam: '#EF4444',
+      assignment: '#7C3AED',
+    };
+    return colors[type];
+  };
+
+  const getTypeIcon = (type: ClassEvent['type']) => {
+    switch (type) {
+      case 'lecture': return BookOpen;
+      case 'lab': return Zap;
+      case 'seminar': return Users;
+      case 'exam': return Clock;
+      case 'assignment': return Edit3;
+      default: return BookOpen;
+    }
   };
 
   const formatTime = (date: Date) => {
@@ -207,34 +453,108 @@ export default function ScheduleScreen() {
     return `${diffMins} min`;
   };
 
-  const getTimeUntil = (date: Date) => {
-    const diffMs = date.getTime() - currentTime.getTime();
-    const diffMins = Math.round(diffMs / (1000 * 60));
-    
-    if (diffMins < 0) return 'Started';
-    if (diffMins < 60) return `${diffMins}m`;
-    
-    const hours = Math.floor(diffMins / 60);
-    const mins = diffMins % 60;
-    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+  const getUniqueInstructors = () => {
+    const instructors = classes.map(cls => cls.instructor.name);
+    return ['all', ...Array.from(new Set(instructors))];
   };
 
-  const getSubjectColor = (subject: string) => {
-    const colors: { [key: string]: string } = {
-      'Mathematics': '#2563EB',
-      'Chemistry': '#059669',
-      'Physics': '#EA580C',
-      'Biology': '#7C3AED',
-      'English': '#DC2626',
-      'History': '#B45309',
-    };
-    return colors[subject] || '#6B7280';
+  const renderEventCard = (event: ClassEvent) => {
+    const IconComponent = getTypeIcon(event.type);
+    
+    return (
+      <View key={event.id} style={[styles.eventCard, { borderLeftColor: event.color }]}>
+        <View style={styles.eventHeader}>
+          <View style={styles.eventTypeContainer}>
+            <View style={[styles.eventTypeIcon, { backgroundColor: event.color }]}>
+              <IconComponent size={16} color="#FFFFFF" />
+            </View>
+            <Text style={styles.eventType}>{event.type.toUpperCase()}</Text>
+          </View>
+          
+          <View style={styles.eventActions}>
+            <TouchableOpacity onPress={() => handleEditEvent(event)} style={styles.actionButton}>
+              <Edit3 size={16} color="#6B7280" />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => handleDeleteEvent(event.id)} style={styles.actionButton}>
+              <Trash2 size={16} color="#EF4444" />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <Text style={styles.eventTitle}>{event.title}</Text>
+        <Text style={styles.eventDescription}>{event.description}</Text>
+
+        <View style={styles.eventDetails}>
+          <View style={styles.eventDetailRow}>
+            <Clock size={14} color="#6B7280" />
+            <Text style={styles.eventDetailText}>
+              {formatTime(event.startTime)} - {formatTime(event.endTime)}
+            </Text>
+          </View>
+          
+          {event.location && (
+            <View style={styles.eventDetailRow}>
+              <MapPin size={14} color="#6B7280" />
+              <Text style={styles.eventDetailText}>{event.location}</Text>
+            </View>
+          )}
+          
+          <View style={styles.eventDetailRow}>
+            <User size={14} color="#6B7280" />
+            <Text style={styles.eventDetailText}>{event.instructor.name}</Text>
+          </View>
+        </View>
+
+        {event.materials && event.materials.length > 0 && (
+          <View style={styles.materialsSection}>
+            <Text style={styles.materialsTitle}>Materials:</Text>
+            {event.materials.map((material, index) => (
+              <Text key={index} style={styles.materialItem}>• {material}</Text>
+            ))}
+          </View>
+        )}
+
+        {event.meetLink && (
+          <TouchableOpacity style={styles.joinButton}>
+            <ExternalLink size={16} color="#FFFFFF" />
+            <Text style={styles.joinButtonText}>Join Meeting</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    );
   };
 
-  // Separate classes by status
-  const liveClasses = classes.filter(cls => cls.isLive);
-  const upcomingClasses = classes.filter(cls => cls.isUpcoming);
-  const pastClasses = classes.filter(cls => !cls.isLive && !cls.isUpcoming);
+  const renderCalendarEvents = () => {
+    const eventsByDate: { [key: string]: ClassEvent[] } = {};
+    
+    filteredClasses.forEach(event => {
+      const dateKey = event.startTime.toISOString().split('T')[0];
+      if (!eventsByDate[dateKey]) {
+        eventsByDate[dateKey] = [];
+      }
+      eventsByDate[dateKey].push({
+        id: event.id,
+        title: event.title,
+        time: formatTime(event.startTime),
+        type: event.type as any,
+        subject: event.subject,
+        duration: formatDuration(event.startTime, event.endTime),
+        isLive: event.isLive,
+      });
+    });
+
+    return <CalendarView events={eventsByDate} />;
+  };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Loading schedule...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -244,214 +564,247 @@ export default function ScheduleScreen() {
           <Calendar size={24} color="#2563EB" />
           <Text style={styles.headerTitle}>Class Schedule</Text>
         </View>
-        <TouchableOpacity 
-          style={styles.bellButton}
-          onPress={navigateToAnnouncements}
-        >
-          <Bell size={20} color="#6B7280" />
-          <View style={styles.notificationBadge}>
-            <Text style={styles.badgeText}>3</Text>
-          </View>
+        
+        <View style={styles.headerActions}>
+          <TouchableOpacity style={styles.headerButton} onPress={() => setFilterModalVisible(true)}>
+            <Filter size={20} color="#6B7280" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.headerButton} onPress={handleAddEvent}>
+            <Plus size={20} color="#6B7280" />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* View Mode Toggle */}
+      <View style={styles.viewModeContainer}>
+        <View style={styles.viewModeToggle}>
+          <TouchableOpacity
+            style={[styles.viewModeButton, viewMode === 'list' && styles.viewModeButtonActive]}
+            onPress={() => setViewMode('list')}
+          >
+            <List size={16} color={viewMode === 'list' ? '#FFFFFF' : '#6B7280'} />
+            <Text style={[styles.viewModeText, viewMode === 'list' && styles.viewModeTextActive]}>
+              List
+            </Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={[styles.viewModeButton, viewMode === 'calendar' && styles.viewModeButtonActive]}
+            onPress={() => setViewMode('calendar')}
+          >
+            <Grid3x3 size={16} color={viewMode === 'calendar' ? '#FFFFFF' : '#6B7280'} />
+            <Text style={[styles.viewModeText, viewMode === 'calendar' && styles.viewModeTextActive]}>
+              Calendar
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity style={styles.exportButton} onPress={handleExportData}>
+          <Download size={16} color="#2563EB" />
         </TouchableOpacity>
       </View>
 
-      <ScrollView 
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search classes, instructors, subjects..."
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholderTextColor="#9CA3AF"
+        />
+      </View>
+
+      {/* Content */}
+      {viewMode === 'calendar' ? (
+        renderCalendarEvents()
+      ) : (
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        >
+          {filteredClasses.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Calendar size={64} color="#9CA3AF" />
+              <Text style={styles.emptyTitle}>No Classes Found</Text>
+              <Text style={styles.emptyText}>
+                {searchQuery || activeFilter !== 'all' || selectedInstructor !== 'all'
+                  ? 'Try adjusting your filters or search terms'
+                  : 'Add your first class to get started'}
+              </Text>
+            </View>
+          ) : (
+            filteredClasses.map(renderEventCard)
+          )}
+        </ScrollView>
+      )}
+
+      {/* Filter Modal */}
+      <Modal
+        visible={filterModalVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setFilterModalVisible(false)}
       >
-        {/* Live Classes */}
-        {liveClasses.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <View style={styles.sectionTitleContainer}>
-                <Zap size={20} color="#EF4444" />
-                <Text style={styles.sectionTitle}>Live Now</Text>
-              </View>
-              <View style={styles.livePulse} />
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Filter & Sort</Text>
+            <TouchableOpacity onPress={() => setFilterModalVisible(false)}>
+              <X size={24} color="#6B7280" />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.modalContent}>
+            {/* Type Filter */}
+            <View style={styles.filterSection}>
+              <Text style={styles.filterSectionTitle}>Event Type</Text>
+              {(['all', 'lecture', 'lab', 'seminar', 'exam', 'assignment'] as const).map(type => (
+                <TouchableOpacity
+                  key={type}
+                  style={[styles.filterOption, activeFilter === type && styles.filterOptionActive]}
+                  onPress={() => setActiveFilter(type)}
+                >
+                  <Text style={[styles.filterOptionText, activeFilter === type && styles.filterOptionTextActive]}>
+                    {type === 'all' ? 'All Types' : type.charAt(0).toUpperCase() + type.slice(1)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </View>
 
-            {liveClasses.map((meetClass) => (
-              <View key={meetClass.id} style={[styles.classCard, styles.liveCard]}>
-                <View style={styles.cardHeader}>
-                  <View style={styles.subjectBadge} style={[styles.subjectBadge, { backgroundColor: getSubjectColor(meetClass.subject) }]}>
-                    <Text style={styles.subjectText}>{meetClass.subject}</Text>
-                  </View>
-                  <View style={styles.liveIndicator}>
-                    <View style={styles.liveDot} />
-                    <Text style={styles.liveText}>LIVE</Text>
-                  </View>
-                </View>
-
-                <Text style={styles.classTitle}>{meetClass.title}</Text>
-                <Text style={styles.classDescription}>{meetClass.description}</Text>
-
-                <View style={styles.teacherInfo}>
-                  <View style={styles.teacherAvatar}>
-                    <User size={20} color="#FFFFFF" />
-                  </View>
-                  <View style={styles.teacherDetails}>
-                    <Text style={styles.teacherName}>{meetClass.teacher.name}</Text>
-                    <Text style={styles.teacherEmail}>{meetClass.teacher.email}</Text>
-                  </View>
-                </View>
-
-                <View style={styles.classMetrics}>
-                  <View style={styles.metric}>
-                    <Clock size={16} color="#6B7280" />
-                    <Text style={styles.metricText}>
-                      {formatTime(meetClass.startTime)} - {formatTime(meetClass.endTime)}
-                    </Text>
-                  </View>
-                  <View style={styles.metric}>
-                    <Users size={16} color="#6B7280" />
-                    <Text style={styles.metricText}>{meetClass.attendeeCount} attending</Text>
-                  </View>
-                </View>
-
-                <TouchableOpacity 
-                  style={[styles.joinButton, styles.liveJoinButton]}
-                  onPress={() => handleJoinMeeting(meetClass)}
+            {/* Instructor Filter */}
+            <View style={styles.filterSection}>
+              <Text style={styles.filterSectionTitle}>Instructor</Text>
+              {getUniqueInstructors().map(instructor => (
+                <TouchableOpacity
+                  key={instructor}
+                  style={[styles.filterOption, selectedInstructor === instructor && styles.filterOptionActive]}
+                  onPress={() => setSelectedInstructor(instructor)}
                 >
-                  <Video size={20} color="#FFFFFF" />
-                  <Text style={styles.joinButtonText}>Join Live Class</Text>
+                  <Text style={[styles.filterOptionText, selectedInstructor === instructor && styles.filterOptionTextActive]}>
+                    {instructor === 'all' ? 'All Instructors' : instructor}
+                  </Text>
                 </TouchableOpacity>
-              </View>
-            ))}
-          </View>
-        )}
-
-        {/* Upcoming Classes */}
-        {upcomingClasses.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <View style={styles.sectionTitleContainer}>
-                <Clock size={20} color="#2563EB" />
-                <Text style={styles.sectionTitle}>Upcoming</Text>
-              </View>
+              ))}
             </View>
 
-            {upcomingClasses.map((meetClass) => (
-              <View key={meetClass.id} style={styles.classCard}>
-                <View style={styles.cardHeader}>
-                  <View style={[styles.subjectBadge, { backgroundColor: getSubjectColor(meetClass.subject) }]}>
-                    <Text style={styles.subjectText}>{meetClass.subject}</Text>
-                  </View>
-                  <Text style={styles.timeUntil}>in {getTimeUntil(meetClass.startTime)}</Text>
-                </View>
-
-                <Text style={styles.classTitle}>{meetClass.title}</Text>
-                <Text style={styles.classDescription}>{meetClass.description}</Text>
-
-                <View style={styles.teacherInfo}>
-                  <View style={styles.teacherAvatar}>
-                    <User size={20} color="#FFFFFF" />
-                  </View>
-                  <View style={styles.teacherDetails}>
-                    <Text style={styles.teacherName}>{meetClass.teacher.name}</Text>
-                    <Text style={styles.teacherEmail}>{meetClass.teacher.email}</Text>
-                  </View>
-                </View>
-
-                <View style={styles.classMetrics}>
-                  <View style={styles.metric}>
-                    <Clock size={16} color="#6B7280" />
-                    <Text style={styles.metricText}>
-                      {formatTime(meetClass.startTime)} - {formatTime(meetClass.endTime)}
-                    </Text>
-                  </View>
-                  <View style={styles.metric}>
-                    <BookOpen size={16} color="#6B7280" />
-                    <Text style={styles.metricText}>{formatDuration(meetClass.startTime, meetClass.endTime)}</Text>
-                  </View>
-                </View>
-
-                <TouchableOpacity 
-                  style={styles.joinButton}
-                  onPress={() => handleJoinMeeting(meetClass)}
-                >
-                  <ExternalLink size={20} color="#FFFFFF" />
-                  <Text style={styles.joinButtonText}>Join When Ready</Text>
-                </TouchableOpacity>
-              </View>
-            ))}
-          </View>
-        )}
-
-        {/* Past Classes with Recordings */}
-        {pastClasses.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <View style={styles.sectionTitleContainer}>
-                <Play size={20} color="#059669" />
-                <Text style={styles.sectionTitle}>Recordings Available</Text>
-              </View>
+            {/* Import/Export */}
+            <View style={styles.filterSection}>
+              <Text style={styles.filterSectionTitle}>Data Management</Text>
+              <TouchableOpacity style={styles.dataButton} onPress={handleExportData}>
+                <Download size={20} color="#2563EB" />
+                <Text style={styles.dataButtonText}>Export Schedule</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.dataButton} onPress={handleImportData}>
+                <Upload size={20} color="#059669" />
+                <Text style={styles.dataButtonText}>Import Schedule</Text>
+              </TouchableOpacity>
             </View>
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
 
-            {pastClasses.filter(cls => cls.recordingAvailable).map((meetClass) => (
-              <View key={meetClass.id} style={[styles.classCard, styles.pastCard]}>
-                <View style={styles.cardHeader}>
-                  <View style={[styles.subjectBadge, { backgroundColor: getSubjectColor(meetClass.subject) }]}>
-                    <Text style={styles.subjectText}>{meetClass.subject}</Text>
-                  </View>
-                  <View style={styles.recordingBadge}>
-                    <Play size={12} color="#059669" />
-                    <Text style={styles.recordingText}>Recorded</Text>
-                  </View>
-                </View>
-
-                <Text style={styles.classTitle}>{meetClass.title}</Text>
-                <Text style={styles.classDescription}>{meetClass.description}</Text>
-
-                <View style={styles.teacherInfo}>
-                  <View style={styles.teacherAvatar}>
-                    <User size={20} color="#FFFFFF" />
-                  </View>
-                  <View style={styles.teacherDetails}>
-                    <Text style={styles.teacherName}>{meetClass.teacher.name}</Text>
-                    <Text style={styles.teacherEmail}>{meetClass.teacher.email}</Text>
-                  </View>
-                </View>
-
-                <View style={styles.classMetrics}>
-                  <View style={styles.metric}>
-                    <Clock size={16} color="#6B7280" />
-                    <Text style={styles.metricText}>
-                      {formatTime(meetClass.startTime)} - {formatTime(meetClass.endTime)}
-                    </Text>
-                  </View>
-                  <View style={styles.metric}>
-                    <Users size={16} color="#6B7280" />
-                    <Text style={styles.metricText}>{meetClass.attendeeCount} attended</Text>
-                  </View>
-                </View>
-
-                <TouchableOpacity 
-                  style={[styles.joinButton, styles.recordingButton]}
-                  onPress={() => handleViewRecording(meetClass)}
-                >
-                  <Play size={20} color="#FFFFFF" />
-                  <Text style={styles.joinButtonText}>Watch Recording</Text>
-                </TouchableOpacity>
-              </View>
-            ))}
-          </View>
-        )}
-
-        {/* Empty State */}
-        {classes.length === 0 && (
-          <View style={styles.emptyState}>
-            <Calendar size={64} color="#9CA3AF" />
-            <Text style={styles.emptyTitle}>No Classes Scheduled</Text>
-            <Text style={styles.emptyText}>
-              Your Google Meet classes will appear here when scheduled
+      {/* Add/Edit Event Modal */}
+      <Modal
+        visible={addEventModalVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setAddEventModalVisible(false)}
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>
+              {editingEvent ? 'Edit Event' : 'Add New Event'}
             </Text>
+            <TouchableOpacity onPress={() => setAddEventModalVisible(false)}>
+              <X size={24} color="#6B7280" />
+            </TouchableOpacity>
           </View>
-        )}
-      </ScrollView>
+
+          <ScrollView style={styles.modalContent}>
+            <View style={styles.formSection}>
+              <Text style={styles.formLabel}>Title *</Text>
+              <TextInput
+                style={styles.formInput}
+                value={eventForm.title}
+                onChangeText={(text) => setEventForm(prev => ({ ...prev, title: text }))}
+                placeholder="Enter event title"
+              />
+            </View>
+
+            <View style={styles.formSection}>
+              <Text style={styles.formLabel}>Description</Text>
+              <TextInput
+                style={[styles.formInput, styles.formTextArea]}
+                value={eventForm.description}
+                onChangeText={(text) => setEventForm(prev => ({ ...prev, description: text }))}
+                placeholder="Enter event description"
+                multiline
+                numberOfLines={3}
+              />
+            </View>
+
+            <View style={styles.formSection}>
+              <Text style={styles.formLabel}>Instructor Name *</Text>
+              <TextInput
+                style={styles.formInput}
+                value={eventForm.instructorName}
+                onChangeText={(text) => setEventForm(prev => ({ ...prev, instructorName: text }))}
+                placeholder="Enter instructor name"
+              />
+            </View>
+
+            <View style={styles.formSection}>
+              <Text style={styles.formLabel}>Instructor Email</Text>
+              <TextInput
+                style={styles.formInput}
+                value={eventForm.instructorEmail}
+                onChangeText={(text) => setEventForm(prev => ({ ...prev, instructorEmail: text }))}
+                placeholder="Enter instructor email"
+                keyboardType="email-address"
+              />
+            </View>
+
+            <View style={styles.formSection}>
+              <Text style={styles.formLabel}>Subject</Text>
+              <TextInput
+                style={styles.formInput}
+                value={eventForm.subject}
+                onChangeText={(text) => setEventForm(prev => ({ ...prev, subject: text }))}
+                placeholder="Enter subject"
+              />
+            </View>
+
+            <View style={styles.formSection}>
+              <Text style={styles.formLabel}>Location</Text>
+              <TextInput
+                style={styles.formInput}
+                value={eventForm.location}
+                onChangeText={(text) => setEventForm(prev => ({ ...prev, location: text }))}
+                placeholder="Enter location or room number"
+              />
+            </View>
+
+            <View style={styles.formSection}>
+              <Text style={styles.formLabel}>Meeting Link</Text>
+              <TextInput
+                style={styles.formInput}
+                value={eventForm.meetLink}
+                onChangeText={(text) => setEventForm(prev => ({ ...prev, meetLink: text }))}
+                placeholder="Enter meeting link (optional)"
+              />
+            </View>
+
+            <TouchableOpacity style={styles.saveButton} onPress={handleSaveEvent}>
+              <Save size={20} color="#FFFFFF" />
+              <Text style={styles.saveButtonText}>
+                {editingEvent ? 'Update Event' : 'Save Event'}
+              </Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -460,6 +813,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F9FAFB',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 16,
+    fontFamily: 'Inter-Regular',
+    color: '#6B7280',
   },
   header: {
     flexDirection: 'row',
@@ -481,211 +844,173 @@ const styles = StyleSheet.create({
     color: '#111827',
     marginLeft: 8,
   },
-  bellButton: {
-    position: 'relative',
+  headerActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  headerButton: {
     padding: 8,
     borderRadius: 8,
     backgroundColor: '#F3F4F6',
   },
-  notificationBadge: {
-    position: 'absolute',
-    top: 2,
-    right: 2,
-    backgroundColor: '#EF4444',
-    borderRadius: 8,
-    minWidth: 16,
-    height: 16,
-    justifyContent: 'center',
+  viewModeContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
   },
-  badgeText: {
-    fontSize: 10,
-    fontFamily: 'Inter-Bold',
+  viewModeToggle: {
+    flexDirection: 'row',
+    backgroundColor: '#F3F4F6',
+    borderRadius: 8,
+    padding: 2,
+  },
+  viewModeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  viewModeButtonActive: {
+    backgroundColor: '#2563EB',
+  },
+  viewModeText: {
+    fontSize: 14,
+    fontFamily: 'Inter-Medium',
+    color: '#6B7280',
+    marginLeft: 4,
+  },
+  viewModeTextActive: {
     color: '#FFFFFF',
+  },
+  exportButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: '#EFF6FF',
+  },
+  searchContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    backgroundColor: '#FFFFFF',
+  },
+  searchInput: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontSize: 16,
+    fontFamily: 'Inter-Regular',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 32,
-  },
-  section: {
-    marginBottom: 32,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    marginBottom: 16,
-  },
-  sectionTitleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontFamily: 'Poppins-SemiBold',
-    color: '#111827',
-    marginLeft: 8,
-  },
-  livePulse: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#EF4444',
-  },
-  classCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
     padding: 20,
-    marginHorizontal: 20,
+  },
+  eventCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
     marginBottom: 16,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  liveCard: {
     borderLeftWidth: 4,
-    borderLeftColor: '#EF4444',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  pastCard: {
-    opacity: 0.8,
-  },
-  cardHeader: {
+  eventHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
   },
-  subjectBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-  },
-  subjectText: {
-    fontSize: 12,
-    fontFamily: 'Inter-SemiBold',
-    color: '#FFFFFF',
-  },
-  liveIndicator: {
+  eventTypeContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FEF2F2',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
   },
-  liveDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#EF4444',
-    marginRight: 4,
-  },
-  liveText: {
-    fontSize: 10,
-    fontFamily: 'Inter-Bold',
-    color: '#EF4444',
-  },
-  timeUntil: {
-    fontSize: 12,
-    fontFamily: 'Inter-SemiBold',
-    color: '#2563EB',
-  },
-  recordingBadge: {
-    flexDirection: 'row',
+  eventTypeIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F0FDF4',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
+    marginRight: 8,
   },
-  recordingText: {
-    fontSize: 10,
+  eventType: {
+    fontSize: 12,
     fontFamily: 'Inter-Bold',
-    color: '#059669',
-    marginLeft: 4,
+    color: '#6B7280',
   },
-  classTitle: {
+  eventActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  actionButton: {
+    padding: 4,
+  },
+  eventTitle: {
     fontSize: 18,
     fontFamily: 'Poppins-SemiBold',
     color: '#111827',
-    marginBottom: 8,
-    lineHeight: 24,
+    marginBottom: 4,
   },
-  classDescription: {
+  eventDescription: {
     fontSize: 14,
     fontFamily: 'Inter-Regular',
     color: '#6B7280',
+    marginBottom: 12,
     lineHeight: 20,
-    marginBottom: 16,
   },
-  teacherInfo: {
+  eventDetails: {
+    marginBottom: 12,
+  },
+  eventDetailRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 4,
   },
-  teacherAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#2563EB',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
+  eventDetailText: {
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+    color: '#374151',
+    marginLeft: 8,
   },
-  teacherDetails: {
-    flex: 1,
+  materialsSection: {
+    marginBottom: 12,
   },
-  teacherName: {
+  materialsTitle: {
     fontSize: 14,
     fontFamily: 'Inter-SemiBold',
-    color: '#111827',
-    marginBottom: 2,
+    color: '#374151',
+    marginBottom: 4,
   },
-  teacherEmail: {
-    fontSize: 12,
+  materialItem: {
+    fontSize: 13,
     fontFamily: 'Inter-Regular',
     color: '#6B7280',
-  },
-  classMetrics: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  metric: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  metricText: {
-    fontSize: 12,
-    fontFamily: 'Inter-Regular',
-    color: '#6B7280',
-    marginLeft: 6,
+    marginLeft: 8,
   },
   joinButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#2563EB',
-    paddingVertical: 12,
-    borderRadius: 12,
-  },
-  liveJoinButton: {
-    backgroundColor: '#EF4444',
-  },
-  recordingButton: {
-    backgroundColor: '#059669',
+    paddingVertical: 8,
+    borderRadius: 8,
   },
   joinButtonText: {
     fontSize: 14,
     fontFamily: 'Inter-SemiBold',
     color: '#FFFFFF',
-    marginLeft: 8,
+    marginLeft: 6,
   },
   emptyState: {
     alignItems: 'center',
@@ -705,5 +1030,112 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
     textAlign: 'center',
     lineHeight: 20,
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: '#F9FAFB',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontFamily: 'Poppins-SemiBold',
+    color: '#111827',
+  },
+  modalContent: {
+    flex: 1,
+    padding: 20,
+  },
+  filterSection: {
+    marginBottom: 24,
+  },
+  filterSectionTitle: {
+    fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
+    color: '#111827',
+    marginBottom: 12,
+  },
+  filterOption: {
+    backgroundColor: '#FFFFFF',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  filterOptionActive: {
+    backgroundColor: '#EFF6FF',
+    borderColor: '#2563EB',
+  },
+  filterOptionText: {
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+    color: '#374151',
+  },
+  filterOptionTextActive: {
+    color: '#2563EB',
+    fontFamily: 'Inter-SemiBold',
+  },
+  dataButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  dataButtonText: {
+    fontSize: 14,
+    fontFamily: 'Inter-SemiBold',
+    color: '#374151',
+    marginLeft: 8,
+  },
+  formSection: {
+    marginBottom: 16,
+  },
+  formLabel: {
+    fontSize: 14,
+    fontFamily: 'Inter-SemiBold',
+    color: '#374151',
+    marginBottom: 6,
+  },
+  formInput: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+    fontFamily: 'Inter-Regular',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  formTextArea: {
+    height: 80,
+    textAlignVertical: 'top',
+  },
+  saveButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#2563EB',
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginTop: 20,
+  },
+  saveButtonText: {
+    fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
+    color: '#FFFFFF',
+    marginLeft: 8,
   },
 });

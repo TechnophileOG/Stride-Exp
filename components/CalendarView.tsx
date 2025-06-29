@@ -17,7 +17,10 @@ import {
   FileText, 
   Clock,
   Filter,
-  X
+  X,
+  Zap,
+  Users,
+  Edit3
 } from 'lucide-react-native';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -28,7 +31,7 @@ interface ClassEvent {
   id: string;
   title: string;
   time: string;
-  type: 'class' | 'test' | 'assignment';
+  type: 'lecture' | 'lab' | 'seminar' | 'exam' | 'assignment';
   subject: string;
   duration: string;
   isLive?: boolean;
@@ -53,7 +56,7 @@ const SAMPLE_EVENTS: { [key: string]: ClassEvent[] } = {
       id: '1',
       title: 'Advanced Calculus',
       time: '10:00 AM',
-      type: 'class',
+      type: 'lecture',
       subject: 'Mathematics',
       duration: '60 min',
       isLive: true,
@@ -62,7 +65,7 @@ const SAMPLE_EVENTS: { [key: string]: ClassEvent[] } = {
       id: '2',
       title: 'Physics Quiz',
       time: '2:00 PM',
-      type: 'test',
+      type: 'exam',
       subject: 'Physics',
       duration: '30 min',
     },
@@ -72,7 +75,7 @@ const SAMPLE_EVENTS: { [key: string]: ClassEvent[] } = {
       id: '3',
       title: 'Chemistry Lab',
       time: '11:00 AM',
-      type: 'class',
+      type: 'lab',
       subject: 'Chemistry',
       duration: '90 min',
     },
@@ -90,9 +93,9 @@ const SAMPLE_EVENTS: { [key: string]: ClassEvent[] } = {
   '2024-01-18': [
     {
       id: '5',
-      title: 'Biology Class',
+      title: 'Biology Seminar',
       time: '9:00 AM',
-      type: 'class',
+      type: 'seminar',
       subject: 'Biology',
       duration: '45 min',
     },
@@ -100,7 +103,7 @@ const SAMPLE_EVENTS: { [key: string]: ClassEvent[] } = {
       id: '6',
       title: 'Math Test',
       time: '1:00 PM',
-      type: 'test',
+      type: 'exam',
       subject: 'Mathematics',
       duration: '60 min',
     },
@@ -125,9 +128,11 @@ export default function CalendarView({ onDateSelect, events = SAMPLE_EVENTS }: C
   const expandAnimation = useRef(new Animated.Value(0)).current;
 
   const filterOptions = [
-    { key: 'class', label: 'Classes', color: '#2563EB' },
-    { key: 'test', label: 'Tests', color: '#EF4444' },
-    { key: 'assignment', label: 'Assignments', color: '#059669' },
+    { key: 'lecture', label: 'Lectures', color: '#2563EB' },
+    { key: 'lab', label: 'Labs', color: '#059669' },
+    { key: 'seminar', label: 'Seminars', color: '#EA580C' },
+    { key: 'exam', label: 'Exams', color: '#EF4444' },
+    { key: 'assignment', label: 'Assignments', color: '#7C3AED' },
   ];
 
   useEffect(() => {
@@ -224,18 +229,22 @@ export default function CalendarView({ onDateSelect, events = SAMPLE_EVENTS }: C
 
   const getEventIcon = (type: string) => {
     switch (type) {
-      case 'class': return BookOpen;
-      case 'test': return FileText;
-      case 'assignment': return Clock;
+      case 'lecture': return BookOpen;
+      case 'lab': return Zap;
+      case 'seminar': return Users;
+      case 'exam': return FileText;
+      case 'assignment': return Edit3;
       default: return BookOpen;
     }
   };
 
   const getEventColor = (type: string) => {
     switch (type) {
-      case 'class': return '#2563EB';
-      case 'test': return '#EF4444';
-      case 'assignment': return '#059669';
+      case 'lecture': return '#2563EB';
+      case 'lab': return '#059669';
+      case 'seminar': return '#EA580C';
+      case 'exam': return '#EF4444';
+      case 'assignment': return '#7C3AED';
       default: return '#6B7280';
     }
   };
@@ -250,7 +259,7 @@ export default function CalendarView({ onDateSelect, events = SAMPLE_EVENTS }: C
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <Calendar size={24} color="#2563EB" />
-          <Text style={styles.headerTitle}>Schedule</Text>
+          <Text style={styles.headerTitle}>Calendar View</Text>
         </View>
         <TouchableOpacity 
           style={styles.filterButton}
@@ -444,6 +453,7 @@ export default function CalendarView({ onDateSelect, events = SAMPLE_EVENTS }: C
 const styles = StyleSheet.create({
   container: {
     backgroundColor: '#F9FAFB',
+    flex: 1,
   },
   header: {
     flexDirection: 'row',
@@ -451,6 +461,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 16,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
   },
   headerLeft: {
     flexDirection: 'row',
@@ -466,7 +479,7 @@ const styles = StyleSheet.create({
     position: 'relative',
     padding: 8,
     borderRadius: 8,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F3F4F6',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
@@ -494,12 +507,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingBottom: 16,
+    paddingVertical: 16,
+    backgroundColor: '#FFFFFF',
   },
   navButton: {
     padding: 8,
     borderRadius: 8,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F3F4F6',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
@@ -513,13 +527,15 @@ const styles = StyleSheet.create({
   },
   calendarScroll: {
     paddingHorizontal: 12,
+    backgroundColor: '#FFFFFF',
   },
   calendarContent: {
     paddingHorizontal: 8,
+    paddingVertical: 16,
   },
   dateCard: {
     width: CARD_WIDTH,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F9FAFB',
     borderRadius: 16,
     padding: 12,
     marginHorizontal: CARD_MARGIN,
