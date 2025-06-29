@@ -48,7 +48,7 @@ export default function RootLayout() {
       
       // Navigate based on onboarding status
       if (!isOnboardingComplete) {
-        router.replace('/onboarding');
+        router.replace('/boarding');
       }
     }
   }, [fontsLoaded, fontError, isOnboardingComplete, showSplash]);
